@@ -43,6 +43,20 @@ public class TinderAiBackendApplication implements CommandLineRunner {
 				"INTP"
 		);
 		profileRepository.save(profile);
+
+		profile = new Profile(
+				"2",
+				"Foo",
+				"Bar",
+				"38",
+				"Indian",
+				Gender.MALE,
+				"Software Programmer",
+				"Foo.jpg",
+				"INTP"
+		);
+		profileRepository.save(profile);
+
 		profileRepository.findAll().forEach(System.out :: println);
 
 		Conversation conversation = new Conversation(
