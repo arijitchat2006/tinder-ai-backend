@@ -60,4 +60,11 @@ public class ConversationController {
         conversationRepository.save(conversation);
         return conversation;
     }
+
+    @GetMapping("/conversations/{conversationId}")
+    public Conversation getConversation(@PathVariable String conversationId) {
+        return conversationRepository.findById(conversationId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Unable to find the conversation with the Id " + conversationId));
+    }
 }
