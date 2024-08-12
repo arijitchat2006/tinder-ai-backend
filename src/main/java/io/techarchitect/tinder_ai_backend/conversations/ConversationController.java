@@ -1,5 +1,6 @@
 package io.techarchitect.tinder_ai_backend.conversations;
 
+import io.techarchitect.tinder_ai_backend.profiles.Profile;
 import io.techarchitect.tinder_ai_backend.profiles.ProfileRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -14,13 +15,17 @@ public class ConversationController {
 
     private final ConversationRepository conversationRepository;
     private final ProfileRepository profileRepository;
+    private final ConversationService conversationService;
 
     public ConversationController(ConversationRepository conversationRepository,
-                                  ProfileRepository profileRepository) {
+                                  ProfileRepository profileRepository,
+                                  ConversationService conversationService) {
         this.conversationRepository = conversationRepository;
         this.profileRepository = profileRepository;
+        this.conversationService = conversationService;
     }
 
+    @CrossOrigin(origins = "*")
     @PostMapping("/conversations")
     public Conversation createNewConversation(@RequestBody CreateConversationRequest request) {
 
@@ -37,6 +42,7 @@ public class ConversationController {
         return conversation;
     }
 
+    @CrossOrigin(origins = "*")
     @PostMapping("/conversations/{conversationId}")
     public Conversation addMessageToConversation(@PathVariable String conversationId,
                                                  @RequestBody ChatMessage chatMessage) {
@@ -44,7 +50,13 @@ public class ConversationController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Unable to find the conversation with the Id " + conversationId));
 
-        profileRepository.findById(chatMessage.authorId())
+        String matchProfileId = conversation.profileId();
+
+        Profile profile = profileRepository.findById(matchProfileId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Unable to find a profile with Id " + matchProfileId));
+
+        Profile user = profileRepository.findById(chatMessage.authorId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Unable to find a profile with Id " + chatMessage.authorId()));
 
@@ -57,10 +69,16 @@ public class ConversationController {
                 LocalDateTime.now());
 
         conversation.messages().add(messageWithTime);
+
+        conversationService.generateProfileResponse(conversation, profile, user);
+
+//        conversation.messages().add(llmMessage);
+
         conversationRepository.save(conversation);
         return conversation;
     }
 
+    @CrossOrigin(origins = "*")
     @GetMapping("/conversations/{conversationId}")
     public Conversation getConversation(@PathVariable String conversationId) {
         return conversationRepository.findById(conversationId)
